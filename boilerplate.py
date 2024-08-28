@@ -1,4 +1,9 @@
+"""
+Utilidad para el tema del cronometro
+"""
+
 import time, json
+
 
 class Stopwatch:
     def __init__(self):
@@ -12,10 +17,9 @@ class Stopwatch:
         return f"{total*1000:.2f}"
 
 
-
-
-
-
+"""
+Uso del cronometro
+"""
 cronometro_datos = {}
 stopwatch = Stopwatch()
 

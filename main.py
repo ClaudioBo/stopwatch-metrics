@@ -1,6 +1,4 @@
-import json, sys
-import random
-import time
+import json, sys, random, time
 
 
 def random_color():
@@ -8,6 +6,7 @@ def random_color():
     g = random.randint(0, 255)
     b = random.randint(0, 255)
     return f"rgba({r}, {g}, {b}, 0.8)"
+
 
 if len(sys.argv) != 2:
     print("python main.py <json.txt>")
