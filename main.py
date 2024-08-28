@@ -1,3 +1,4 @@
+import os
 import json, sys, random, time
 
 
@@ -128,7 +129,9 @@ html_template = f"""
 </html>
 """
 
-filename = f"chart-{int(time.time())}.html"
+filename = f"output/chart-{int(time.time())}.html"
+
+os.makedirs("output", exist_ok=True)
 
 with open(filename, "w") as f:
     f.write(html_template)
