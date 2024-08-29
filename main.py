@@ -1,5 +1,4 @@
-import os
-import json, sys, random, time
+import os, json, sys, random, time, webbrowser
 
 
 def random_color():
@@ -137,3 +136,5 @@ with open(filename, "w") as f:
     f.write(html_template)
 
 print("Listo:", filename)
+file_path = os.path.abspath(filename)
+webbrowser.open(f"file://{file_path}")
