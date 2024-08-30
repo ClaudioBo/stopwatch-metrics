@@ -12,6 +12,8 @@ if len(sys.argv) != 2:
     print("python main.py <json.txt>")
     exit()
 
+averages = {}
+
 file_path = sys.argv[1]
 data = []
 
@@ -21,20 +23,21 @@ with open(file_path, "r") as file:
         line_data = {k: float(v) for k, v in line_data.items()}
         data.append(line_data)
 
-labels = [f"{i+1}" for i in range(len(data))]
 datasets = []
-average_line_indices = []
+for key in data[0].keys():
+    values = [float(d[key]) for d in data if key in d]
 
-for index, key in enumerate(data[0].keys()):
+    # Creating a linear x-axis with numeric indices
+    indices = list(range(len(values)))
 
-    values = [d[key] for d in data if key in d]
+    color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
+
+    # Dataset for the original data
+    datasets.append({"label": key, "data": [{"x": idx, "y": val} for idx, val in zip(indices, values)], "fill": False, "borderColor": color, "backgroundColor": color, "tension": 0.1, "parsing": False,})  # Structure data as x, y pairs
+
+    # Calculate average
     avg_value = sum(values) / len(values)
-    color = random_color()
-
-    datasets.append({"label": key, "data": values, "fill": False, "borderColor": color, "tension": 0.1, "averageIndex": len(datasets) + 1})
-    average_line_indices.append(len(datasets))
-    datasets.append({"data": [avg_value] * len(values), "fill": False, "borderColor": color, "borderDash": [5, 5], "tension": 0.1, "averageIndex": None, "hidden": False, "borderWidth": 2})
-
+    averages[key] = avg_value
 
 html_template = f"""
 <!DOCTYPE html>
@@ -54,6 +57,7 @@ html_template = f"""
             justify-content: center;
             align-items: center;
             background-color: #f7f7f7;
+            flex-direction: column;
         }}
         #chart-container {{
             width: 100%;
@@ -69,15 +73,19 @@ html_template = f"""
     <div id="chart-container">
         <canvas id="myChart"></canvas>
     </div>
+    <pre>
+        {json.dumps(averages)}
+    </pre>
     <script>
         const ctx = document.getElementById('myChart').getContext('2d');
         const myChart = new Chart(ctx, {{
             type: 'line',
             data: {{
-                labels: {json.dumps(labels)},
                 datasets: {json.dumps(datasets)}
             }},
             options: {{
+                animation: false,
+                parsing: false,
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {{
@@ -89,6 +97,7 @@ html_template = f"""
                         }}
                     }},
                     x: {{
+                        type: 'linear',
                         title: {{
                             display: true,
                             text: 'Muestra'
@@ -96,30 +105,11 @@ html_template = f"""
                     }}
                 }},
                 plugins: {{
-                    legend: {{
-                        onClick: (e, legendItem, legend) => {{
-                            const index = legendItem.datasetIndex;
-                            const chart = legend.chart;
-                            const dataset = chart.data.datasets[index];
-                            const averageIndex = dataset.averageIndex;
-                            
-                            if (averageIndex !== null) {{
-                                const meta = chart.getDatasetMeta(index);
-                                const avgMeta = chart.getDatasetMeta(averageIndex);
-                                const visibility = !meta.hidden;
-                                
-                                meta.hidden = visibility;
-                                avgMeta.hidden = visibility;
-                                
-                                chart.update();
-                            }}
-                        }},
-                        labels: {{
-                            filter: (legendItem, chartData) => {{
-                            return (chartData.datasets[legendItem.datasetIndex].label)
-                            }}
-                        }}
-                    }}
+                    decimation: {{
+                        enabled: true,
+                        algorithm: 'lttb',
+                        samples: 100
+                    }},
                 }}
             }}
         }});

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Chart.js with Decimation</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+        <style>
+            body,
+            html {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                width: 100%;
+                display: flex;
+                justify-content: flex-start;
+                align-items: center;
+                background-color: #f7f7f7;
+                flex-direction: column;
+                box-sizing: border-box;
+            }
+
+            .chart-container {
+                width: 100%;
+                height: calc(100% - 60px);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                box-sizing: border-box;
+            }
+
+            canvas {
+                width: 100%;
+                height: auto;
+                max-width: calc(100% - 20px);
+                max-height: 100%;
+                box-sizing: border-box;
+            }
+        </style>
+    </head>
+    <body>
+        <input type="file" id="fileInput" />
+        <details>
+            <summary>Promedios</summary>
+            <pre id="averages"></pre>
+        </details>
+        <div class="chart-container">
+            <canvas id="myChart"></canvas>
+        </div>
+        <div id="selectionBox" class="selection-box"></div>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const fileInput = document.getElementById("fileInput");
+                fileInput.click();
+
+                fileInput.addEventListener("change", event => {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = e => {
+                            try {
+                                const text = e.target.result;
+                                const lines = text.split("\n").filter(line => line.trim() !== "");
+                                const data = lines
+                                    .map(line => {
+                                        try {
+                                            return JSON.parse(line);
+                                        } catch (error) {
+                                            console.error("Error parsing line:", line, error);
+                                            return null;
+                                        }
+                                    })
+                                    .filter(item => item !== null);
+                                parseData(data);
+                            } catch (error) {
+                                console.error("Error reading file:", error);
+                            }
+                        };
+                        reader.readAsText(file);
+                    }
+                });
+            });
+
+            function parseData(data) {
+                const preDatasets = {};
+                data.forEach(sample => {
+                    for (const [key, value] of Object.entries(sample)) {
+                        if (!(key in preDatasets)) {
+                            const randColor = getRandomColor();
+                            preDatasets[key] = {
+                                radius: 2,
+                                borderColor: randColor,
+                                borderWidth: 1.5,
+                                fill: false,
+                                label: key,
+                                data: [],
+                            };
+                        }
+                        let valueNumber = +value;
+                        if (valueNumber > 10_000) valueNumber = null;
+                        preDatasets[key].data.push({
+                            x: preDatasets[key].data.length,
+                            y: valueNumber,
+                        });
+                    }
+                });
+
+                const pre = document.getElementById("averages");
+                for (const [key, value] of Object.entries(preDatasets)) {
+                    let sum = value.data.reduce((sum, a) => sum + a.y, 0);
+                    const avg = sum / value.data.length;
+                    pre.textContent += `${key}: ${avg.toFixed(2)}ms\n`;
+                }
+
+                updateChart(Object.values(preDatasets));
+            }
+
+            function getRandomColor() {
+                const letters = "0123456789ABCDEF";
+                let color = "#";
+                for (let i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+
+            function updateChart(data) {
+                const ctx = document.getElementById("myChart").getContext("2d");
+
+                // Clear existing chart if any
+                if (window.chart) {
+                    window.chart.destroy();
+                }
+
+                // Create a new chart with the selected data
+                window.chart = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        datasets: data,
+                    },
+                    options: {
+                        animation: false,
+                        parsing: false,
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: "linear",
+                                title: {
+                                    display: true,
+                                    text: "Sample Index",
+                                },
+                                ticks: {
+                                    source: "data",
+                                    maxRotation: 0,
+                                    autoSkip: true,
+                                },
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: "Time (ms)",
+                                },
+                            },
+                        },
+                        plugins: {
+                            hover: { mode: null },
+                            decimation: {
+                                enabled: false,
+                                algorithm: "min-max", // 'min-max' is another option
+                                samples: 500,
+                                threshold: 1, // Force
+                            },
+                            zoom: {
+                                pan: {
+                                    enabled: true,
+                                    mode: "xy",
+                                },
+                                zoom: {
+                                    wheel: {
+                                        enabled: true,
+                                    },
+                                    pinch: {
+                                        enabled: true,
+                                    },
+                                    mode: "xy",
+                                    onZoomComplete({ chart }) {
+                                        chart.update("none");
+                                    },
+                                },
+                            },
+                        },
+                    },
+                });
+            }
+        </script>
+    </body>
+</html>
