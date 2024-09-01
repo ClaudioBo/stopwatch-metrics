@@ -98,8 +98,8 @@
                                 data: [],
                             };
                         }
+                        if(preDatasets[key].data.length > 1000) continue
                         let valueNumber = +value;
-                        if (valueNumber > 10_000) valueNumber = null;
                         preDatasets[key].data.push({
                             x: preDatasets[key].data.length,
                             y: valueNumber,
@@ -142,7 +142,7 @@
                     },
                     options: {
                         animation: false,
-                        parsing: false,
+                        // parsing: false,
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
@@ -153,7 +153,7 @@
                                     text: "Sample Index",
                                 },
                                 ticks: {
-                                    source: "data",
+                                    source: "auto",
                                     maxRotation: 0,
                                     autoSkip: true,
                                 },
@@ -167,30 +167,30 @@
                         },
                         plugins: {
                             hover: { mode: null },
-                            decimation: {
-                                enabled: false,
-                                algorithm: "min-max", // 'min-max' is another option
-                                samples: 500,
-                                threshold: 1, // Force
-                            },
-                            zoom: {
-                                pan: {
-                                    enabled: true,
-                                    mode: "xy",
-                                },
-                                zoom: {
-                                    wheel: {
-                                        enabled: true,
-                                    },
-                                    pinch: {
-                                        enabled: true,
-                                    },
-                                    mode: "xy",
-                                    onZoomComplete({ chart }) {
-                                        chart.update("none");
-                                    },
-                                },
-                            },
+                            // decimation: {
+                            //     enabled: false,
+                            //     algorithm: "min-max", // 'min-max' is another option
+                            //     samples: 500,
+                            //     threshold: 1, // Force
+                            // },
+                            // zoom: {
+                            //     pan: {
+                            //         enabled: true,
+                            //         mode: "xy",
+                            //     },
+                            //     zoom: {
+                            //         wheel: {
+                            //             enabled: true,
+                            //         },
+                            //         pinch: {
+                            //             enabled: true,
+                            //         },
+                            //         mode: "xy",
+                            //         onZoomComplete({ chart }) {
+                            //             chart.update("none");
+                            //         },
+                            //     },
+                            // },
                         },
                     },
                 });
